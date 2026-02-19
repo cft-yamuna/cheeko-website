@@ -1,0 +1,6 @@
+body {
+  margin: 0;
+  font-family: 'Switzer', sans-serif;
+  background: url('/bg.png') no-repeat center center fixed;
+  background-size: cover;
+}

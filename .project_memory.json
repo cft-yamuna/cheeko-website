@@ -1,0 +1,18 @@
+{
+  "features": [
+    "hero section",
+    "top bar",
+    "navigation bar",
+    "responsive design"
+  ],
+  "description": "Cheeko website landing page with a hero section. The landing page includes a top bar, navigation bar, hero title, and subtitle.",
+  "components": [
+    "HeroSection"
+  ],
+  "changes": [
+    "Added HeroSection component with basic layout and styling.",
+    "Fixed the header and navigation styles.",
+    "Added responsive image styling."
+  ],
+  "quiz_type": "landing_page"
+}
