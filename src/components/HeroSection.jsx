@@ -94,7 +94,7 @@ function HeroSection() {
           disable-zoom
           interaction-prompt="none"
           shadow-intensity="0"
-          interpolation-decay="100"
+          interpolation-decay="200"
           touch-action="pan-y"
           reveal="auto"
           power-preference="low-power"
@@ -103,13 +103,24 @@ function HeroSection() {
             if (el && !el._resetListenerAdded) {
               el._resetListenerAdded = true;
               let resetTimer;
-              el.addEventListener('camera-change', (e) => {
-                if (e.detail.source === 'user-interaction') {
-                  clearTimeout(resetTimer);
-                  resetTimer = setTimeout(() => {
-                    el.cameraOrbit = '20deg 90deg 2.2m';
-                  }, 2000);
-                }
+              let isInteracting = false;
+              el.addEventListener('mousedown', () => { isInteracting = true; });
+              el.addEventListener('mouseup', () => {
+                isInteracting = false;
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(() => {
+                  el.cameraOrbit = '20deg 90deg 2.2m';
+                  el.cameraTarget = 'auto auto auto';
+                }, 1500);
+              });
+              el.addEventListener('touchstart', () => { isInteracting = true; });
+              el.addEventListener('touchend', () => {
+                isInteracting = false;
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(() => {
+                  el.cameraOrbit = '20deg 90deg 2.2m';
+                  el.cameraTarget = 'auto auto auto';
+                }, 1500);
               });
             }
           }}

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes @gltf-transform/cli inspect:*)",
+      "Bash(npx:*)"
+    ]
+  }
+}
