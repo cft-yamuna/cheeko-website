@@ -1,7 +1,7 @@
 .hero-section {
   width: 100%;
-  min-height: 768px;
-  overflow: visible;
+  height: 100vh;
+  overflow: hidden;
   position: relative;
 }
 
@@ -90,7 +90,7 @@
 
 .hero-content {
   text-align: center;
-  padding: 60px 20px 20px;
+  padding: 25px 20px 10px;
   position: relative;
   z-index: 5;
   transition: opacity 0.4s ease;
@@ -125,7 +125,7 @@
 /* Card Fan Layout */
 .card-fan {
   position: absolute;
-  bottom: -150px;
+  bottom: 20px;
   left: 35%;
   transform: translateX(-50%);
   height: 380px;
@@ -382,9 +382,9 @@
 .device-3d {
   position: absolute;
   right: 180px;
-  top: 320px;
+  bottom: 0;
+  height: 55vh;
   width: 500px;
-  height: 620px;
   z-index: 4;
   opacity: 0;
   overflow: visible;
@@ -493,9 +493,9 @@
 
   .device-3d {
     right: 40px;
-    top: 280px;
+    bottom: 0;
+    height: 50vh;
     width: 380px;
-    height: 480px;
   }
 
   .card-fan {
@@ -525,15 +525,14 @@
 
   .device-3d {
     right: 30px;
-    top: auto;
     bottom: 0;
+    height: 45vh;
     width: 320px;
-    height: 400px;
   }
 
   .card-fan {
     left: 25%;
-    bottom: -80px;
+    bottom: 10px;
     width: 450px;
     height: 260px;
   }
@@ -557,8 +556,10 @@
 /* Mobile (max-width: 768px) */
 @media (max-width: 768px) {
   .hero-section {
-    min-height: auto;
-    overflow: visible;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .top-bar {
@@ -578,7 +579,8 @@
   }
 
   .hero-content {
-    padding: 30px 20px 20px;
+    padding: 20px 20px 10px;
+    order: 1;
   }
 
   .hero-content h1 {
@@ -596,9 +598,10 @@
     right: auto;
     top: auto;
     bottom: auto;
-    width: 280px;
-    height: 350px;
-    margin: 10px auto 0;
+    width: 300px;
+    height: 360px;
+    margin: 0 auto;
+    order: 2;
     animation: deviceEntrance 1s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
@@ -609,7 +612,8 @@
     transform: translateX(-50%);
     width: 340px;
     height: 220px;
-    margin-top: 20px;
+    margin-top: -30px;
+    order: 3;
   }
 
   .card-fan-item img { border-radius: 10px; }
@@ -671,6 +675,10 @@
     padding: 6px 8px;
   }
 
+  .hero-content {
+    padding: 15px 15px 5px;
+  }
+
   .hero-content h1 {
     font-size: 24px;
     line-height: 33px;
@@ -681,8 +689,8 @@
   }
 
   .device-3d {
-    width: 240px;
-    height: 300px;
+    width: 260px;
+    height: 320px;
   }
 
   .card-fan {
