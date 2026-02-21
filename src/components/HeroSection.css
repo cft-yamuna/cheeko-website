@@ -46,7 +46,7 @@
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 16px; /* Added gap property */
+  gap: 16px;
 }
 
 .nav-links a {
@@ -93,6 +93,12 @@
   padding: 60px 20px 20px;
   position: relative;
   z-index: 5;
+  transition: opacity 0.4s ease;
+}
+
+.hero-content.hero-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .hero-content h1 {
@@ -125,6 +131,7 @@
   height: 380px;
   width: 700px;
   background: transparent;
+  perspective: 1000px;
 }
 
 .card-fan-item {
@@ -144,7 +151,8 @@
 
 /* Outermost cards */
 .card-1 img,
-.card-5 img {
+.card-5 img,
+.card-6 img {
   width: 140px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15), 0 0 6px rgba(255, 255, 255, 0.3);
 }
@@ -191,6 +199,12 @@
   right: 50px;
   bottom: -10px;
   z-index: 1;
+}
+
+.card-6 {
+  left: 120%;
+  bottom: -10px;
+  z-index: 0;
 }
 
 /* Animations trigger only after all images loaded */
@@ -269,6 +283,101 @@
   }
 }
 
+/* Attention keyframes */
+@keyframes cardAttention {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0px) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-14px) scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes cardGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15), 0 0 6px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 6px 30px rgba(243, 110, 36, 0.5), 0 0 16px rgba(252, 188, 23, 0.35), 0 0 6px rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* ---- Carousel mode ---- */
+.card-fan.carousel .card-fan-item {
+  animation: none !important;
+  opacity: 1;
+  right: auto !important;
+}
+
+/* Reserve card (no slot assigned) — hidden off-screen */
+.card-fan.carousel .card-fan-item:not([data-slot]) {
+  left: 120%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card-fan.carousel.ready .card-fan-item {
+  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              bottom 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.4s ease;
+}
+
+.card-fan.carousel.ready .card-fan-item img {
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Slot positions (all use translateX(-50%) for consistent centering) */
+.card-fan.carousel [data-slot="0"] {
+  left: 17.1%;  bottom: -10px;
+  transform: translateX(-50%) rotate(-18deg);
+  z-index: 1;
+}
+.card-fan.carousel [data-slot="1"] {
+  left: 34.3%;  bottom: 5px;
+  transform: translateX(-50%) rotate(-8deg);
+  z-index: 2;
+}
+.card-fan.carousel [data-slot="2"] {
+  left: 50%;  bottom: 15px;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+.card-fan.carousel [data-slot="3"] {
+  left: 65.7%;  bottom: 5px;
+  transform: translateX(-50%) rotate(8deg);
+  z-index: 2;
+}
+.card-fan.carousel [data-slot="4"] {
+  left: 82.9%;  bottom: -10px;
+  transform: translateX(-50%) rotate(18deg);
+  z-index: 1;
+}
+
+/* Carousel slot image sizes */
+.card-fan.carousel [data-slot="0"] img,
+.card-fan.carousel [data-slot="4"] img { width: 140px !important; }
+.card-fan.carousel [data-slot="1"] img,
+.card-fan.carousel [data-slot="3"] img { width: 160px !important; }
+.card-fan.carousel [data-slot="2"] img { width: 190px !important; }
+
+/* Center card attention in carousel (0.8s delay = wait for slide transition) */
+.card-fan.carousel [data-slot="2"].attention {
+  animation: cardAttention 1.6s ease-in-out 0.8s infinite !important;
+  cursor: pointer;
+  z-index: 5;
+}
+.card-fan.carousel [data-slot="2"].attention img {
+  animation: cardGlowPulse 1.6s ease-in-out 0.8s infinite !important;
+}
+
+/* All cards clickable during playback */
+.card-fan-item.clickable {
+  cursor: pointer;
+}
+
 /* 3D Device */
 .device-3d {
   position: absolute;
@@ -312,6 +421,63 @@
     transform: translateX(0) translateY(0) rotate(0deg) scale(1);
     filter: blur(0px);
   }
+}
+
+/* Device boom effect on card insertion */
+@keyframes deviceBoom {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  18% {
+    transform: scale(1.07) translateY(-6px);
+  }
+  36% {
+    transform: scale(0.96) translateX(3px);
+  }
+  52% {
+    transform: scale(1.04) translateX(-3px);
+  }
+  68% {
+    transform: scale(0.98) translateX(2px);
+  }
+  82% {
+    transform: scale(1.01) translateX(-1px);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+.device-3d.device-boom {
+  animation: deviceBoom 0.55s ease-out !important;
+}
+
+/* Device screen overlay — shows card image during playback */
+.device-screen-overlay {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 42%;
+  height: 36%;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.device-screen-overlay.visible {
+  opacity: 1;
+}
+
+.device-screen-overlay img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 /* iPad Landscape (1024px - 1180px) */
@@ -372,7 +538,7 @@
     height: 260px;
   }
 
-  .card-1 img, .card-5 img { width: 100px !important; }
+  .card-1 img, .card-5 img, .card-6 img { width: 100px !important; }
   .card-2 img, .card-4 img { width: 115px !important; }
   .card-3 img { width: 140px !important; }
 
@@ -380,6 +546,12 @@
   .card-2 { left: 90px; }
   .card-4 { right: 90px; }
   .card-5 { right: 15px; }
+
+  .card-fan.carousel [data-slot="0"] img,
+  .card-fan.carousel [data-slot="4"] img { width: 100px !important; }
+  .card-fan.carousel [data-slot="1"] img,
+  .card-fan.carousel [data-slot="3"] img { width: 115px !important; }
+  .card-fan.carousel [data-slot="2"] img { width: 140px !important; }
 }
 
 /* Mobile (max-width: 768px) */
@@ -441,7 +613,7 @@
   }
 
   .card-fan-item img { border-radius: 10px; }
-  .card-1 img, .card-5 img { width: 80px !important; }
+  .card-1 img, .card-5 img, .card-6 img { width: 80px !important; }
   .card-2 img, .card-4 img { width: 90px !important; }
   .card-3 img { width: 110px !important; }
 
@@ -449,6 +621,12 @@
   .card-2 { left: 70px; }
   .card-4 { right: 70px; }
   .card-5 { right: 10px; }
+
+  .card-fan.carousel [data-slot="0"] img,
+  .card-fan.carousel [data-slot="4"] img { width: 80px !important; }
+  .card-fan.carousel [data-slot="1"] img,
+  .card-fan.carousel [data-slot="3"] img { width: 90px !important; }
+  .card-fan.carousel [data-slot="2"] img { width: 110px !important; }
 }
 
 /* Mobile Landscape */
@@ -475,9 +653,15 @@
     height: 200px;
   }
 
-  .card-1 img, .card-5 img { width: 70px !important; }
+  .card-1 img, .card-5 img, .card-6 img { width: 70px !important; }
   .card-2 img, .card-4 img { width: 80px !important; }
   .card-3 img { width: 100px !important; }
+
+  .card-fan.carousel [data-slot="0"] img,
+  .card-fan.carousel [data-slot="4"] img { width: 70px !important; }
+  .card-fan.carousel [data-slot="1"] img,
+  .card-fan.carousel [data-slot="3"] img { width: 80px !important; }
+  .card-fan.carousel [data-slot="2"] img { width: 100px !important; }
 }
 
 /* Small mobile (max-width: 480px) */
@@ -506,7 +690,7 @@
     height: 190px;
   }
 
-  .card-1 img, .card-5 img { width: 65px !important; }
+  .card-1 img, .card-5 img, .card-6 img { width: 65px !important; }
   .card-2 img, .card-4 img { width: 75px !important; }
   .card-3 img { width: 95px !important; }
 
@@ -514,4 +698,10 @@
   .card-2 { left: 55px; }
   .card-4 { right: 55px; }
   .card-5 { right: 5px; }
+
+  .card-fan.carousel [data-slot="0"] img,
+  .card-fan.carousel [data-slot="4"] img { width: 65px !important; }
+  .card-fan.carousel [data-slot="1"] img,
+  .card-fan.carousel [data-slot="3"] img { width: 75px !important; }
+  .card-fan.carousel [data-slot="2"] img { width: 95px !important; }
 }
