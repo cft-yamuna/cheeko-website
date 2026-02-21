@@ -141,6 +141,7 @@ function HeroSection() {
   const melodyRef = useRef(null);   // current { promise, cancel }
   const audioCtxRef = useRef(null);
   const modelViewerRef = useRef(null);
+  const targetOrbitRef = useRef('20deg 90deg 2.2m');
   const countdown = useCountdown();
 
   const handleImageLoad = () => {
@@ -202,28 +203,44 @@ function HeroSection() {
 
     cardEl.getAnimations().forEach(a => a.cancel());
 
+    // Smooth flight: drift up above the device, then descend slowly into the top
+    const aboveDeviceY = deltaY - 160;
     const anim = cardEl.animate([
       {
-        transform: 'translateX(-50%) translate(0px, 0px) scale(1) rotate(0deg)',
+        transform: 'translateX(-50%) translate(0px, 0px) scale(1.12)',
         opacity: 1,
+        filter: 'brightness(1.05)',
       },
       {
-        transform: `translateX(-50%) translate(${deltaX * 0.4}px, ${deltaY - 120}px) scale(0.45) rotate(3deg)`,
-        opacity: 0.9,
-        offset: 0.4,
+        // Rise up and drift toward device center
+        transform: `translateX(-50%) translate(${deltaX * 0.5}px, ${aboveDeviceY}px) scale(0.55)`,
+        opacity: 1,
+        filter: 'brightness(1.15)',
+        offset: 0.35,
       },
       {
-        transform: `translateX(-50%) translate(${deltaX}px, ${deltaY - 50}px) scale(0.15) rotate(0deg)`,
-        opacity: 0.75,
-        offset: 0.75,
+        // Hover directly above device top
+        transform: `translateX(-50%) translate(${deltaX}px, ${aboveDeviceY}px) scale(0.35)`,
+        opacity: 0.95,
+        filter: 'brightness(1.2)',
+        offset: 0.55,
       },
       {
-        transform: `translateX(-50%) translate(${deltaX}px, ${deltaY + 30}px) scale(0.12) rotate(0deg)`,
+        // Slowly sinking into device top
+        transform: `translateX(-50%) translate(${deltaX}px, ${deltaY - 10}px) scale(0.18)`,
+        opacity: 0.6,
+        filter: 'brightness(1.4)',
+        offset: 0.82,
+      },
+      {
+        // Absorbed into device
+        transform: `translateX(-50%) translate(${deltaX}px, ${deltaY + 5}px) scale(0.1)`,
         opacity: 0,
+        filter: 'brightness(1.8)',
       },
     ], {
-      duration: 1800,
-      easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+      duration: 2000,
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
       fill: 'forwards',
     });
 
@@ -249,8 +266,23 @@ function HeroSection() {
     melodyRef.current = null;
     setPhase('returning');
 
+    // Animate camera back to default 20deg angle
+    const mv = modelViewerRef.current;
+    if (mv) {
+      const returnDuration = 500;
+      const rStart = performance.now();
+      const returnFrame = (now) => {
+        const t = Math.min((now - rStart) / returnDuration, 1);
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        mv.cameraOrbit = `${20 * eased}deg 90deg 2.2m`;
+        if (t < 1) requestAnimationFrame(returnFrame);
+      };
+      requestAnimationFrame(returnFrame);
+      targetOrbitRef.current = '20deg 90deg 2.2m';
+    }
+
     setTimeout(() => {
-      // Cleanup ALL fly animations
+      // Cleanup ALL fly animations and stale inline styles
       flyAnimsRef.current.forEach(({ anim: a, cardIndex: idx }) => {
         a.cancel();
         const el = cardRefs.current[idx];
@@ -258,9 +290,20 @@ function HeroSection() {
           el.style.display = '';
           el.style.transform = '';
           el.style.opacity = '';
+          el.style.filter = '';
         }
       });
       flyAnimsRef.current = [];
+
+      // Also clean up any leftover styles on ALL card elements
+      cardRefs.current.forEach(el => {
+        if (el) {
+          el.getAnimations().forEach(a => a.cancel());
+          el.style.transform = '';
+          el.style.opacity = '';
+          el.style.filter = '';
+        }
+      });
 
       setPlayingCard(null);
       setPhase('idle');
@@ -280,75 +323,128 @@ function HeroSection() {
       audioCtxRef.current.resume();
     }
 
-    // Shared sequence: vanish others → boom → flip card → fly to device → boom → reappear
-    const runInsertSequence = (cardIdx, onArrangementUpdate) => {
-      // Boom pulse on the clicked card (shockwave origin)
-      const clickedEl = cardRefs.current[cardIdx];
-      if (clickedEl) {
-        clickedEl.animate([
-          { scale: '1', filter: 'brightness(1)' },
-          { scale: '1.2', filter: 'brightness(1.4)', offset: 0.35 },
-          { scale: '1', filter: 'brightness(1)' },
-        ], { duration: 600, easing: 'ease-out' });
-      }
+    // Helper: wipe every inline style an animation chain may have left behind
+    const clearCardStyles = (el) => {
+      if (!el) return;
+      el.getAnimations().forEach(a => a.cancel());
+      el.style.transform = '';
+      el.style.opacity = '';
+      el.style.filter = '';
+    };
 
-      // Vanish all other visible cards with burst effect
-      arrangement.forEach(idx => {
-        if (idx === cardIdx) return;
+    // Sequence: (cards vanish + device twirls) → card flips → flies into device → jelly dip → reappear
+    const runInsertSequence = (cardIdx, onArrangementUpdate) => {
+      const twirlDuration = 1200;
+      const cardEl = cardRefs.current[cardIdx];
+
+      // Capture the card's resting position BEFORE any animations start
+      const cardRect = cardEl ? cardEl.getBoundingClientRect() : null;
+
+      // ── Step 1: Cards vanish (left) + device twirls (right) simultaneously ──
+
+      // Vanish other cards with staggered sweep
+      const others = arrangement.filter(i => i !== cardIdx);
+      others.forEach((idx, i) => {
         const el = cardRefs.current[idx];
         if (!el) return;
         el.animate([
-          { opacity: 1, scale: '1', filter: 'brightness(1)' },
-          { opacity: 0.7, scale: '0.6', filter: 'brightness(1.5)', offset: 0.3 },
-          { opacity: 0, scale: '0.15', filter: 'brightness(2)' },
-        ], { duration: 600, fill: 'forwards', easing: 'ease-in' });
+          { opacity: 1, transform: 'translateX(-50%) scale(1)' },
+          { opacity: 0, transform: 'translateX(-50%) scale(0.3) translateY(25px)' },
+        ], { duration: 500, fill: 'forwards', easing: 'ease-in', delay: i * 40 });
       });
 
-      // After cards vanish, slowly flip the clicked card
+      // Twirl the 3D model and end facing screen straight (0deg)
+      const mv = modelViewerRef.current;
+      if (mv) {
+        const parsed = parseFloat(mv.cameraOrbit);
+        const startTheta = ((parsed % 360) + 360) % 360;
+        const totalRotation = 360 - startTheta;
+        const startTime = performance.now();
+        const twirlFrame = (now) => {
+          const t = Math.min((now - startTime) / twirlDuration, 1);
+          const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          mv.cameraOrbit = `${startTheta + totalRotation * eased}deg 90deg 2.2m`;
+          if (t < 1) requestAnimationFrame(twirlFrame);
+        };
+        requestAnimationFrame(twirlFrame);
+        targetOrbitRef.current = '0deg 90deg 2.2m';
+      }
+
+      // ── Step 2: After twirl finishes → combined lift + flip animation ──
       setTimeout(() => {
-        const cardEl = cardRefs.current[cardIdx];
         if (!cardEl) return;
 
+        // Single combined animation: lift → spin → settle (no commitStyles needed)
         const flipAnim = cardEl.animate([
-          { rotate: 'y 0deg', scale: '1' },
-          { rotate: 'y 90deg', scale: '1.1', offset: 0.25 },
-          { rotate: 'y 180deg', scale: '1.2', offset: 0.5 },
-          { rotate: 'y 270deg', scale: '1.1', offset: 0.75 },
-          { rotate: 'y 360deg', scale: '1' },
-        ], { duration: 1000, easing: 'ease-in-out' });
+          { transform: 'translateX(-50%) translateY(0px) rotateY(0deg) scale(1)', offset: 0 },
+          { transform: 'translateX(-50%) translateY(-35px) rotateY(0deg) scale(1.18)', offset: 0.2 },
+          { transform: 'translateX(-50%) translateY(-45px) rotateY(120deg) scale(1.22)', offset: 0.4 },
+          { transform: 'translateX(-50%) translateY(-48px) rotateY(180deg) scale(1.24)', offset: 0.5 },
+          { transform: 'translateX(-50%) translateY(-45px) rotateY(240deg) scale(1.22)', offset: 0.6 },
+          { transform: 'translateX(-50%) translateY(-35px) rotateY(360deg) scale(1.18)', offset: 0.8 },
+          { transform: 'translateX(-50%) translateY(-30px) rotateY(360deg) scale(1.12)', offset: 1 },
+        ], { duration: 1600, easing: 'cubic-bezier(0.37, 0, 0.63, 1)', fill: 'forwards' });
 
+        // ── Step 3: After flip → fly into device ──
         flipAnim.onfinish = () => {
-          // Fly card into device from the top
-          const flyAnim = flyCardToDevice(cardIdx);
-          if (!flyAnim) return;
+          if (!cardEl || !deviceRef.current) return;
 
+          // Use the pre-captured resting rect for stable delta calculations
+          const deviceRect = deviceRef.current.getBoundingClientRect();
+          const deviceCenterX = deviceRect.left + deviceRect.width / 2;
+          const deviceTopY = deviceRect.top + deviceRect.height * 0.12;
+          const cardCenterX = cardRect.left + cardRect.width / 2;
+          const cardCenterY = cardRect.top + cardRect.height / 2;
+          const deltaX = deviceCenterX - cardCenterX;
+          const deltaY = deviceTopY - cardCenterY;
+          const aboveDeviceY = deltaY - 160;
+
+          // Cancel flip, start fly — no stale inline styles since we skip commitStyles
+          cardEl.getAnimations().forEach(a => a.cancel());
+
+          const flyAnim = cardEl.animate([
+            { transform: 'translateX(-50%) translate(0px, -30px) scale(1.12)', opacity: 1 },
+            { transform: `translateX(-50%) translate(${deltaX * 0.5}px, ${aboveDeviceY}px) scale(0.55)`, opacity: 1, offset: 0.35 },
+            { transform: `translateX(-50%) translate(${deltaX}px, ${aboveDeviceY}px) scale(0.35)`, opacity: 0.95, offset: 0.55 },
+            { transform: `translateX(-50%) translate(${deltaX}px, ${deltaY - 10}px) scale(0.18)`, opacity: 0.6, offset: 0.82 },
+            { transform: `translateX(-50%) translate(${deltaX}px, ${deltaY + 5}px) scale(0.1)`, opacity: 0 },
+          ], { duration: 2000, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' });
+
+          flyAnimsRef.current.push({ cardIndex: cardIdx, anim: flyAnim });
+
+          // ── Step 4: Card absorbed → jelly dip + cards reappear ──
           flyAnim.onfinish = () => {
-            // Update arrangement
             const newArr = onArrangementUpdate();
 
-            // Boom effect on device
-            deviceRef.current?.classList.add('device-boom');
+            // Jelly dip
+            const dev = deviceRef.current;
+            if (dev) {
+              dev.animate([
+                { transform: 'translateY(0px) scaleX(1) scaleY(1)' },
+                { transform: 'translateY(12px) scaleX(1.06) scaleY(0.92)', offset: 0.35 },
+                { transform: 'translateY(0px) scaleX(1) scaleY(1)' },
+              ], { duration: 600, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+            }
 
-            // Reappear cards with pop-in
-            newArr.forEach(idx => {
+            // Staggered reappear — cancel ALL animations & clear inline styles first
+            newArr.forEach((idx, i) => {
               const el = cardRefs.current[idx];
               if (!el) return;
-              el.getAnimations().forEach(a => a.cancel());
+              clearCardStyles(el);
               el.animate([
-                { opacity: 0, scale: '0.5' },
-                { opacity: 1, scale: '1.05', offset: 0.7 },
-                { opacity: 1, scale: '1' },
-              ], { duration: 400, easing: 'ease-out' });
+                { opacity: 0, transform: 'translateX(-50%) translateY(30px) scale(0.4)' },
+                { opacity: 1, transform: 'translateX(-50%) translateY(-4px) scale(1.04)', offset: 0.65 },
+                { opacity: 1, transform: 'translateX(-50%) translateY(0px) scale(1)' },
+              ], { duration: 450, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', delay: i * 60 });
             });
 
             setTimeout(() => {
-              deviceRef.current?.classList.remove('device-boom');
               setPhase('playing');
               startPlayback(cardIdx);
-            }, 550);
+            }, 650);
           };
         };
-      }, 700);
+      }, twirlDuration);
     };
 
     if (phase === 'idle') {
@@ -373,7 +469,7 @@ function HeroSection() {
         melodyRef.current = null;
       }
 
-      // Bring previous card back (cancel fly animation)
+      // Bring previous card back (cancel fly animation + clear all stale styles)
       flyAnimsRef.current.forEach(({ anim, cardIndex: idx }) => {
         anim.cancel();
         const el = cardRefs.current[idx];
@@ -381,9 +477,20 @@ function HeroSection() {
           el.style.display = '';
           el.style.transform = '';
           el.style.opacity = '';
+          el.style.filter = '';
         }
       });
       flyAnimsRef.current = [];
+
+      // Clean up all cards before starting new sequence
+      cardRefs.current.forEach(el => {
+        if (el) {
+          el.getAnimations().forEach(a => a.cancel());
+          el.style.transform = '';
+          el.style.opacity = '';
+          el.style.filter = '';
+        }
+      });
 
       setPlayingCard(cardIndex);
 
@@ -469,7 +576,7 @@ function HeroSection() {
                 isInteracting = false;
                 clearTimeout(resetTimer);
                 resetTimer = setTimeout(() => {
-                  el.cameraOrbit = '20deg 90deg 2.2m';
+                  el.cameraOrbit = targetOrbitRef.current;
                   el.cameraTarget = 'auto auto auto';
                 }, 1500);
               });
@@ -478,7 +585,7 @@ function HeroSection() {
                 isInteracting = false;
                 clearTimeout(resetTimer);
                 resetTimer = setTimeout(() => {
-                  el.cameraOrbit = '20deg 90deg 2.2m';
+                  el.cameraOrbit = targetOrbitRef.current;
                   el.cameraTarget = 'auto auto auto';
                 }, 1500);
               });

@@ -309,6 +309,7 @@
   animation: none !important;
   opacity: 1;
   right: auto !important;
+  transform-origin: center center;
 }
 
 /* Reserve card (no slot assigned) — hidden off-screen */
@@ -427,40 +428,48 @@
 @keyframes deviceBoom {
   0% {
     transform: scale(1) translate(0, 0);
+    filter: brightness(1);
   }
-  18% {
-    transform: scale(1.07) translateY(-6px);
+  8% {
+    transform: scale(1.14) translateY(-12px);
+    filter: brightness(1.35);
+  }
+  22% {
+    transform: scale(0.93) translateY(4px) translateX(5px);
+    filter: brightness(1.05);
   }
   36% {
+    transform: scale(1.07) translateX(-4px);
+    filter: brightness(1.15);
+  }
+  50% {
     transform: scale(0.96) translateX(3px);
+    filter: brightness(1);
   }
-  52% {
-    transform: scale(1.04) translateX(-3px);
+  65% {
+    transform: scale(1.03) translateX(-2px);
   }
-  68% {
-    transform: scale(0.98) translateX(2px);
-  }
-  82% {
-    transform: scale(1.01) translateX(-1px);
+  80% {
+    transform: scale(0.99) translateX(1px);
   }
   100% {
     transform: scale(1) translate(0, 0);
+    filter: brightness(1);
   }
 }
 
 .device-3d.device-boom {
-  animation: deviceBoom 0.55s ease-out !important;
+  animation: deviceBoom 0.7s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 /* Device screen overlay — shows card image during playback */
 .device-screen-overlay {
   position: absolute;
-  top: 18%;
+  top: 0;
   left: 50%;
-  transform: translateX(-50%);
-  width: 42%;
-  height: 36%;
-  z-index: 10;
+  transform: translateX(-50%) translateY(-50%);
+  width: 22%;
+  z-index: -1;
   opacity: 0;
   transition: opacity 0.5s ease;
   pointer-events: none;
