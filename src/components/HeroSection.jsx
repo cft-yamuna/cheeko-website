@@ -593,6 +593,11 @@ function HeroSection() {
           }}
         />
       </div>
+      {/* Scroll indicator */}
+      <div className="scroll-indicator">
+        <span>Scroll</span>
+        <div className="scroll-arrow" />
+      </div>
     </div>
   );
 }

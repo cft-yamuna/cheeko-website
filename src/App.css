@@ -1,11 +1,18 @@
-html, body {
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
-  height: 100%;
-  overflow: hidden;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Switzer', sans-serif;
-  background: url('/bg.png') no-repeat center center fixed;
-  background-size: cover;
+  background: #0d0416;
+  overflow-x: hidden;
 }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0d0416; }
+::-webkit-scrollbar-thumb { background: #f36e24; border-radius: 3px; }
